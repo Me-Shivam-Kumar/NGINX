@@ -1,0 +1,110 @@
+#NGINX Logs:- Two Types
+#Access Logs and Error Logs
+
+#Access Logs:-the files that contain information related to the tasks performed by the NGINX server will be logged.
+#Errror Logs:-the files that contanin information about errors will be logged.
+
+#Important NGINX access log fields:-
+#remote_addr: The IP address of the client that requested the resource
+#http_user_agent: The user agent in use that sent the request
+#time_local: The local time zone of the server
+#request: What resource was requested by the client (an API path or any file)
+#status: The status code of the response
+#body_bytes_sent: The size of the response in bytes
+#request_time: The total time spent processing the request
+#remote_user: Information about the user making the request
+
+#NGINX Error Log Levels(Based on degree of severity and verbosity):
+#1)emerg
+#2)alert
+#3)crit
+#4)error
+#5)warn
+#6)notice
+#7)info
+#8)debug
+
+http {
+	#------------------------------------------------------------------------------------------
+	#ACCESS LOGS
+	
+	#Enabling access logs(By Default it is enabled)
+	#syntax:- access_log path [format [buffer=size] [gzip[=level]] [flush=time] [if=condition]]
+	access_log /log/nginx/access.log main;
+	
+	#Disabling access logs
+	access_log off;
+	
+	# main format is equvivalent to to the following configuration
+	# log_format main'$remote_addr - $remote_user [$time_local] '
+        #              '"$request" $status $body_bytes_sent '
+        #              '"$http_referer" "$http_user_agent"';
+
+	
+	#Setting NGINX custom log foramt
+
+	log_format  custom '$remote_addr - $remote_user [$time_local] '
+                         	     '"$request" $status $body_bytes_sent '
+                      		     '"$http_referer" "$http_user_agent" '
+                     		     '"$http_x_forwarded_for" $request_id '
+                   		     '$geoip_country_name $geoip_country_code '
+                  		     '$geoip_region_name $geoip_city ';
+
+
+	#Formatting the logs as JSON(Using escape=json setting)
+
+	log_format format_name escape=json
+	'{'
+	'"time_local":"$time_local",'
+	'"remote_addr":"$remote_addr",'
+    	'"remote_user":"$remote_user",'
+    	'"request":"$request",'
+    	'"status": "$status"'
+	'}';
+	
+	#-----------------------------------------------------------------------------------------
+	#ERROR LOGS
+
+	#Configuration
+	#Syntax:- error_log log_file_location log_level;
+	#Log file location by dafault:-  /var/log/nginx/error.log
+	
+	
+	#Logging to Multiple Files
+	
+	error_log /var/log/nginx/error.info warn # This will instruct Nginx to log all messages of type warn and more severe log level crit, alert, and emerg messages.
+	error_log /var/log/nginx/error.crit crit;
+
+	#Disabling Error Logs
+	error_log off;
+
+	#-----------------------------------------------------------------------------------------
+	#NGINX access log configuration can be overriden by another configuration at a lower level
+	#Eg:-
+	#http {
+  	#access_log  /var/log/nginx/access.log  main;
+  	#server {
+    	#	listen 8000;
+    	#	location /health {
+      	#	access_log off; # Any calls to /health will not be logged.
+      	#	proxy_pass http://app1server;
+    	#	}
+  	#    }
+	#}
+
+	#-----------------------------------------------------------------------------------------
+	
+	
+	
+    server {
+        listen       8080;
+        server_name  somename  alias  another.alias;
+
+       location / {
+            proxy_pass http://localhost:8000/health;
+        }
+    }
+
+}
+
+events{ }
